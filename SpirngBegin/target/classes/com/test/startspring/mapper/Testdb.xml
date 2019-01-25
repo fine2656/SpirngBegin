@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #17. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+<!-- ==== #18. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다) ==== --> 
+<mapper namespace="testdb">
+
+   <insert id="mbtest1">
+   	  insert into spring_mybatistest(no, name, email, tel, addr, writeday)
+      values(seq_mybatistest.nextval, '홍길동'||seq_mybatistest.nextval, 'hongkd@gmail.com', '010-234-5678', '서울시 종로구 인사동', default)    
+   </insert>
+   
+   
+   <!-- DTO(VO)로 넘어온 값을 받아서 DB에 처리해주는 예제
+        이때 조심해야할 일은 parameterType 에 VO 의 클래스명을 기재할때
+        패키지명까지 모두 기술해주어야 한다.!!!!
+    -->
+   <insert id="mbtest3" parameterType="com.test.model.MyBatisTestVO"> 
+   	  insert into spring_mybatistest(no, name, email, tel, addr, writeday)
+      values(seq_mybatistest.nextval, #{irum}, #{email}, #{tel}, #{addr}, default)
+   </insert>
+   
+   
+   <insert id="mbtest4" parameterType="com.test.model.MemberVO"> 
+   	  insert into spring_mybatistest(no, name, email, tel, addr, writeday)
+      values(seq_mybatistest.nextval, #{name}, #{email}, #{tel}, #{addr}, default)
+   </insert>
+   
+   <insert id="mbtest5" parameterType="HashMap">
+   	  insert into spring_mybatistest(no, name, email, tel, addr, writeday)
+      values(seq_mybatistest.nextval, #{NAME}, #{EMAIL}, #{TEL}, #{ADDR}, default)
+   </insert>
+   
+   
+   <select id="mbtest6" parameterType="int" resultType="String" >
+   	   select name 
+   	   from spring_mybatistest
+   	   where no = #{no}
+   </select>
+   
+   
+   <select id="mbtest7" parameterType="int" resultType="com.test.model.MemberVO">
+       select no, name, email, tel, addr
+		    , to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') as writeday
+	   from spring_mybatistest
+	   where no = #{no}
+   </select>
+   
+   <!-- 다중행 데이터를 조회하기
+              조심할 것은 !!!!!
+        resultType 에 List 이라는 타입은 없다.!!!!!
+              대신에 리턴되는 결과물이 List<VO> 이라면 resultType 에  VO 만 적어주어야 한다.!!!!! -->
+   <select id="mbtest8" parameterType="String" resultType="com.test.model.MemberVO">
+	   select no, name, email, tel, addr
+			, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') as writeday
+	   from spring_mybatistest
+	   where addr like '%'|| #{addr} ||'%'
+	   order by no desc
+   </select>
+   
+   
+   <resultMap type="com.test.model.MemberVO2" id="dataResultMap">
+   	  <result property="no2"       column="no"        javaType="int" />
+   	  <result property="name2"     column="name"      javaType="String"/>
+   	  <result property="email2"    column="email"     javaType="String"/>
+   	  <result property="tel2" 	   column="tel"       javaType="String"/>
+   	  <result property="addr2" 	   column="addr"      javaType="String"/>
+   	  <result property="writeday2" column="writeday"  javaType="String"/>
+   </resultMap>
+   
+   <select id="mbtest9" parameterType="String" resultMap="dataResultMap">
+	   select no, name, email, tel, addr
+			, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') as writeday
+	   from spring_mybatistest
+	   where addr like '%'|| #{addr} ||'%'
+	   order by no desc
+   </select>
+   
+   
+   <select id="mbtest9_2" parameterType="String" resultType="com.test.model.MemberVO2">
+	   select no AS no2, name AS name2, email AS email2, tel AS tel2, addr AS addr2
+			, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') AS writeday2
+	   from spring_mybatistest
+	   where addr like '%'|| #{addr} ||'%'
+	   order by no desc
+   </select>
+   
+   
+   <!-- ====== >>>> 중요 <<<< ===== 
+	     HashMap 타입으로 매개변수를 받아온 것을 꺼내서 사용할때
+	     1. 데이터로 사용할때는 #{key명} 이고,
+	     2. myBatis 에서 제공하는 if 엘리먼트 안에서 사용할때는
+	              그냥 그대로 <if test="key명"> 이렇게 사용한다.
+	        if test="key명" 인데 key명은 HashMap의 키이다.
+	     3. 식별자(테이블명, 컬럼명)로 사용할때는 ${key명} 이다.         
+	--> 
+   <resultMap type="HashMap" id="dataResultMap2">
+   	  <result property="NO"        column="no"        javaType="String" />
+   	  <result property="NAME"      column="name"      javaType="String"/>
+   	  <result property="EMAIL"     column="email"     javaType="String"/>
+   	  <result property="TEL" 	   column="tel"       javaType="String"/>
+   	  <result property="ADDR" 	   column="addr"      javaType="String"/>
+   	  <result property="WRITEDAY"  column="writeday"  javaType="String"/>
+   	  <result property="BIRTHDAY"  column="birthday"  javaType="String"/>
+   </resultMap>
+   	
+   <select id="mbtest10" parameterType="String" resultMap="dataResultMap2">
+	   select no, name, email, tel, addr
+			, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') AS writeday
+			, nvl(birthday, ' ') AS birthday
+	   from spring_mybatistest
+	   where addr like '%'|| #{addr} ||'%'
+	   order by no desc
+   </select>
+   
+   <!-- ====== >>>> 중요 <<<< ===== 
+	     SQL구문에서 부등호 <  > 가 사용되는 경우이다.
+	         그런데 SQL 쿼리문이 XML 파일에 기재되므로 부등호가 엘리먼트요소(태그)로
+	         인식되지 않고 그냥 부등호로 인식되게 하려면  <![CDATA[부등호]]> 로 
+	         사용해야 한다.
+	-->
+	
+   <select id="mbtest11" parameterType="HashMap" resultMap="dataResultMap2">
+   	   select no, name, email, tel, addr
+			, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') AS writeday
+			, nvl(birthday,' ') AS birthday
+	   from spring_mybatistest
+	   where ${COLNAME} like '%'|| #{SEARCHWORD} ||'%'
+	   <if test="STARTDAY != '' and  ENDDAY != '' ">
+	   	        and to_char(writeday, 'yyyy-mm-dd') <![CDATA[>=]]> #{STARTDAY} and to_char(writeday, 'yyyy-mm-dd') <![CDATA[<=]]> #{ENDDAY} 
+	   </if>  
+	   order by no desc
+   </select>
+   <!-- 넘어온 날짜가 해쉬맵인 지 아닌지 검사 -->
+   		
+
+   <select id="mbtest12_deptno" resultType="int">
+		select distinct nvl(department_id,-9999) AS department_id
+		from hr.employees
+		order by department_id
+   </select>
+   
+   
+   <resultMap type="HashMap" id="empDeptMap">
+   	  <result property="DEPARTMENT_ID"   column="department_id"   javaType="String" />
+ 	  <result property="DEPARTMENT_NAME" column="department_name" javaType="String" />
+	  <result property="EMPLOYEE_ID"     column="employee_id"     javaType="String" />
+ 	  <result property="NAME"        	 column="name"        	  javaType="String" />
+  	  <result property="JUBUN"        	 column="jubun"        	  javaType="String" />
+  	  <result property="AGE"        	 column="age"        	  javaType="String" />
+      <result property="GENDER"          column="gender"          javaType="String" />
+      <result property="YEARPAY"         column="yearpay"         javaType="String" />
+   </resultMap>
+   	
+   <select id="mbtest12" parameterType="HashMap" resultMap="empDeptMap">
+			select B.department_id AS department_id ,department_name,employee_id,first_name ||' '|| last_name AS name
+				  , jubun,func_age(jubun) AS age,func_gender(jubun) AS gender
+			      ,func_yearpay(employee_id) AS yearpay
+			from hr.employees A Left join hr.departments B
+			on A.department_id  = B.department_id
+			where 1=1
+			<if test='DEAPARTMENT_ID != null and !"".equals(DEAPARTMENT_ID)'> <!-- 모든 부서(value='') 와 널값이 아닌경우 -->
+				and nvl(B.department_id,-9999) = #{DEAPARTMENT_ID}
+			</if>
+			<choose>
+				<when test='GENDER != null and "남".equals(GENDER)'> <!-- 키값을 받아와 paraMap 에 넣어줌 -->
+					and func_gender(A.jubun) = '남'
+				</when>
+				<when test='GENDER != null and "여".equals(GENDER)'>
+					and func_gender(A.jubun) = '여'
+				</when>
+				<otherwise> <!-- 안써도 상관없음 , 모두가 포함된 조건-->
+					and A.jubun is not null					
+				</otherwise>
+			</choose>
+			
+			<!-- <choose> </choose> = if,elseif,else -->
+   </select>
+      	
+   <select id="mbtest13" parameterType="String" resultMap="dataResultMap2">
+	   select no, name, email, tel, addr
+			, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') AS writeday
+			, nvl(birthday, ' ') AS birthday
+	   from spring_mybatistest
+	   where addr like '%'|| #{addrSearch} ||'%'
+	   order by no desc
+   </select>
+	
+   <select id="mbtest14" parameterType="HashMap" resultMap="empDeptMap">
+      select  nvl(to_char(b.department_id),' ') as department_id, nvl(b.department_name ,' ') as department_name, a.employee_id as employee_id,
+            a.first_name || '' || a.last_name as name, a.jubun as jubun,
+               func_gender(a.jubun) as gender, func_age(a.jubun) as age, 
+               func_yearpay(a.employee_id) as yearpay
+      from hr.employees a left join hr.departments b
+      on  a.department_id = b.department_id
+      where 1=1 
+      <if test='DEPTNOARR != null and DEPTNOARR[0] != "" '>
+         and nvl(b.department_id, -9999) IN 
+         <foreach collection="DEPTNOARR" index="i" open="(" separator="," close=")">   
+            ${DEPTNOARR[i]}
+         </foreach>
+      </if>
+      <if test='GENDER != null and !"".equals(GENDER)'>
+         and func_gender(a.jubun) = #{GENDER}
+      </if>
+      
+      <if test='AGELINE != null and !"".equals(AGELINE)'>
+         and trunc(func_age(a.jubun), -1) = #{AGELINE}
+      </if>
+      order by department_id, yearpay desc
+   </select>
+   
+   <resultMap type="HashMap" id="genderMap">
+   	<result property="GENDER" column="GENDER" javaType="String"/>
+   	<result property="CNT" column="CNT" javaType="String"/>
+   	<result property="PERCENTAGE" column="PERCENTAGE" javaType="String"/>
+   </resultMap>
+   <select id="mbtest15_gender" resultMap="genderMap">
+	  select func_gender(jubun) AS GENDER,count(*) AS cnt
+	         ,round(count(*)/(select count(*) from hr.employees) * 100) AS percentage
+	  from hr.employees
+	  group by func_gender(jubun)
+	  order by 1
+  </select>
+  
+  <resultMap type="HashMap" id="agelineMap">
+  	<result property="AGELINE" column="AGELINE" javaType="String"/>
+  	<result property="CNT" column="CNT" javaType="String"/>
+  </resultMap>
+  <select id="mbtest15_ageline" resultMap="agelineMap">
+	  	  select decode(trunc(func_age(jubun),-1),0,'10대미만'
+	                                           ,trunc(func_age(jubun),-1)||'대') AS AGELINE
+	         ,count(*) AS CNT
+	 	 from hr.employees
+	 	 group by trunc(func_age(jubun),-1)
+	 	 order by trunc(func_age(jubun),-1)
+  </select>
+  
+  <resultMap type="HashMap" id="yearpayResult">
+  	<result property="DEPARTMENT_ID" column="DEPARTMENT_ID" javaType="String"/>
+  	<result property="DEPARTMEMT_NAME" column="DEPARTMEMT_NAME" javaType="String"/>
+  	<result property="YEARPAY" column="YEARPAY" javaType="String"/>
+  </resultMap>
+  <select id="mbtest15_yearpay" resultMap="yearpayResult">
+    select A.department_id AS DEPARTMENT_ID,B.department_name AS DEPARTMEMT_NAME , trunc(avg(func_yearpay(employee_id))) AS YEARPAY
+  	from hr.employees A left join hr.departments B
+ 	 on A.department_id = B.department_id
+ 	 group by A.department_id,B.department_name   
+  </select>
+  
+   <resultMap type="HashMap" id="empList">
+  	<result property="EMPLOYEE_ID" column="EMPLOYEE_ID" javaType="String"/>
+  	<result property="DEPARTMENT_ID" column="DEPARTMENT_ID" javaType="String"/>
+  	<result property="EMPYEARPAY" column="EMPYEARPAY" javaType="String"/>
+  </resultMap>
+  <select id="mbtest15_empYearpay" resultMap="empList">
+ 		select employee_id,department_id,func_yearpay(employee_id) AS yearpay
+  		from hr.employees  
+  		where department_id = #{department_id}
+  </select>
+  <!-- ==== Mybatis에서 Procedure를 사용하여 insert 하기 ==== -->
+	<insert id="mbtest17" statementType="CALLABLE" parameterType="HashMap">
+		{ call pcd_spring_mybatistest_insert( #{NAME,mode=IN}
+											, #{EMAIL,mode=IN}
+											, #{TEL,mode=IN}
+											, #{ADDR,mode=IN}
+		)
+			
+		}
+<!-- 	
+		{ call 불러와야할 프로시져 이름(#{HashMap에서 받아온 키 값,mode=모드타입(IN,OUT)}) =>IN 모드일때
+		}
+ -->
+	</insert>
+	
+	
+	<!-- ***** 사원번호를 입력받아서 Mybatis에서 Procedure 를 사용하여 한명의 사원정보 select 하기 ***** -->	
+	<!--  employeevo 로 넘어갈 값 => select 한 값을 vo 에 담아서 넘겨준다. -->
+	<resultMap type="com.test.model.EmployeeVO" id="mbtest18_resultMap">
+		<result property="employee_id" column="EMPLOYEE_ID" javaType="String"/>
+		<result property="ename" 	   column="ENAME" 		javaType="String"/>
+		<result property="gender" 	   column="GENDER" 		javaType="String"/>
+		<result property="age" 		   column="AGE" 		javaType="String"/>
+		<result property="department_name" column="DEPARTMENT_NAME" javaType="String"/>
+		<result property="job_id" 	   column="JOB_ID" 		javaType="String"/>
+		<result property="yearsal" 	   column="YEARSAL" 	javaType="String"/>		
+	</resultMap>
+	<!-- 받아올 값 -->
+	<parameterMap type="HashMap" id="mbtest18_parameterMap">
+		<parameter property="EMPLOYEE_ID" mode="IN" jdbcType="VARCHAR" javaType="String"/>
+		<parameter property="EMPLOYEEINFO" mode="OUT" jdbcType="CURSOR" resultMap="mbtest18_resultMap"/>
+		<!--  <patameter property='HashMap의 키값을 적어준다' mode='프로시져의 in모드 적어준다.' jdbcType="오라클에서 정해준 타입" javaType="java에서의 타입을 적어준다(String employee_id = req.getParameter("employee_id");)"> -->
+		<!--  <patameter property='dao단의 넘겨주는 이름을 적어준다'(ArrayList<EmployeeVO>)paraMap.get("EMPLOYEEINFO")' mode='프로시져의 out모드 적어준다.'> jdbcType="오라클에서 정해준 타입" javaType="CURSOR" resultMap="mbtest18_resultMap" -->
+	</parameterMap>
+	<select id="mbtest18" statementType="CALLABLE" parameterMap="mbtest18_parameterMap">	
+		{
+			call PCD_EMPLOYEES_SELECT(?,?)
+		}
+	</select>
+	<!-- { 
+			call 프로시져명 (?,?) => ?표 순서에 맞게 상단 parameter 가 들어온다(첫번째 ? :EMPLOYEE_ID, 두번쨰 ? :EMPLOYEEINFO)
+		} -->
+	
+	<!--  ***** 부서번호를 입력받아서 Mybatis 에서 Procedure 를 사용하여 해당부서의 사원들의 정보 select 하기 ***** -->
+	<!-- 받아올 값 -->
+	<parameterMap type="HashMap" id="mbtest19_parameterMap">
+		<parameter property="DEPARTMENT_ID" mode="IN" jdbcType="VARCHAR" javaType="String"/>
+		<parameter property="EMPLOYEEINFO" mode="OUT" jdbcType="CURSOR" resultMap="mbtest18_resultMap"/>
+		<!--  <patameter property='HashMap의 키값을 적어준다' mode='프로시져의 in모드 적어준다.' jdbcType="오라클에서 정해준 타입" javaType="java에서의 타입을 적어준다(String employee_id = req.getParameter("employee_id");)"> -->
+		<!--  <patameter property='dao단의 넘겨주는 이름을 적어준다'(ArrayList<EmployeeVO>)paraMap.get("EMPLOYEEINFO")' mode='프로시져의 out모드 적어준다.'> jdbcType="오라클에서 정해준 타입" javaType="CURSOR" resultMap="mbtest18_resultMap" -->
+	</parameterMap>
+	<select id="mbtest19" statementType="CALLABLE" parameterMap="mbtest19_parameterMap">	
+		{
+			call PCD_EMPLOYEES_SELECT2(?,?)
+		}
+	</select>
+	<!-- { 
+			call 프로시져명 (?,?) => ?표 순서에 맞게 상단 parameter 가 들어온다(첫번째 ? :EMPLOYEE_ID, 두번쨰 ? :EMPLOYEEINFO)
+		} -->
+			
+		
+</mapper>
+
+
